@@ -52,11 +52,6 @@ type linuxSystemTray struct {
 
 	lastClickX int
 	lastClickY int
-
-	// Firing clickHandler on "opened" made a right click open the menu and immediately raise the
-	// attached window. Once the host reports clicks via (Secondary)Activate, "opened" must not
-	// fire clickHandler; hosts signalling clicks only via "opened" keep it (#3907).
-	sawClickSignal atomic.Bool
 }
 
 func (s *linuxSystemTray) getScreen() (*Screen, error) {
@@ -723,9 +718,6 @@ func (s *linuxSystemTray) Event(id int32, eventID string, data dbus.Variant, tim
 			gtkDispatch(item.menuItem.handleClick)
 		}
 	case "opened":
-		if s.parent.clickHandler != nil && !s.sawClickSignal.Load() {
-			s.parent.clickHandler()
-		}
 		if s.parent.onMenuOpen != nil {
 			s.parent.onMenuOpen()
 		}
@@ -825,7 +817,6 @@ func cloneDbusMenu(src *dbusMenu) dbusMenu {
 }
 
 func (s *linuxSystemTray) Activate(x int32, y int32) (err *dbus.Error) {
-	s.sawClickSignal.Store(true)
 	s.lastClickX = int(x)
 	s.lastClickY = int(y)
 	globalApplication.debug("systray Activate called", "x", x, "y", y)
@@ -846,7 +837,6 @@ func (s *linuxSystemTray) Scroll(delta int32, orientation string) (err *dbus.Err
 }
 
 func (s *linuxSystemTray) SecondaryActivate(x int32, y int32) (err *dbus.Error) {
-	s.sawClickSignal.Store(true)
 	s.lastClickX = int(x)
 	s.lastClickY = int(y)
 	if s.parent.rightClickHandler != nil {
