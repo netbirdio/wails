@@ -858,9 +858,15 @@ func widgetSetVisible(widget pointer, hidden bool) {
 	C.gtk_widget_set_visible((*C.GtkWidget)(widget), C.gboolean(btoi(!hidden)))
 }
 
+// close destroys the window and drops the reference windowNew sank into it.
+// gtk_window_destroy only unmaps and dissolves the widget tree; without the
+// matching unref the GtkApplicationWindow refcount never reaches zero, so the
+// child WebKitWebView stays alive and its WebKitWebProcess is never reaped.
 func (w *linuxWebviewWindow) close() {
-	C.gtk_window_destroy(w.gtkWindow())
 	getNativeApplication().unregisterWindow(windowPointer(w.window))
+	C.gtk_window_destroy(w.gtkWindow())
+	C.g_object_unref(C.gpointer(w.window))
+	w.window = nil
 }
 
 func (w *linuxWebviewWindow) enableDND() {
@@ -1264,6 +1270,11 @@ func windowNewWebview(parentId uint, gpuPolicy WebviewGpuPolicy) pointer {
 	}
 
 	C.webkit_web_view_set_settings(C.webkit_web_view((*C.GtkWidget)(webView)), settings)
+
+	// The web view holds its own references to both, so hand ours back or they
+	// outlive every closed window.
+	C.g_object_unref(C.gpointer(settings))
+	C.g_object_unref(C.gpointer(manager))
 
 	// Register URI scheme handler
 	registerURIScheme.Do(func() {
