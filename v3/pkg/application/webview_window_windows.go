@@ -394,12 +394,23 @@ func (w *windowsWebviewWindow) execJS(js string) {
 }
 
 func (w *windowsWebviewWindow) setBackgroundColour(color RGBA) {
+	// A re-tint can reach a window whose WebView2 is still initialising (e.g. an
+	// app-wide theme apply racing the first window's creation). The colour is
+	// already stored in options and applied once the controller is ready, so
+	// skip what isn't there yet instead of dereferencing it.
+	webviewReady := w.chromium != nil && w.chromium.GetController() != nil
 	switch w.parent.options.BackgroundType {
 	case BackgroundTypeSolid:
-		w32.SetBackgroundColour(w.hwnd, color.Red, color.Green, color.Blue)
-		w.chromium.SetBackgroundColour(color.Red, color.Green, color.Blue, color.Alpha)
+		if w.hwnd != 0 {
+			w32.SetBackgroundColour(w.hwnd, color.Red, color.Green, color.Blue)
+		}
+		if webviewReady {
+			w.chromium.SetBackgroundColour(color.Red, color.Green, color.Blue, color.Alpha)
+		}
 	case BackgroundTypeTransparent, BackgroundTypeTranslucent:
-		w.chromium.SetBackgroundColour(0, 0, 0, 0)
+		if webviewReady {
+			w.chromium.SetBackgroundColour(0, 0, 0, 0)
+		}
 	}
 }
 
