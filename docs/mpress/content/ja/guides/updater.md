@@ -65,6 +65,10 @@ func main() {
 
 `Restart` は、実行中のアプリケーションに終了を要求する前に、ヘルパーが `application.New` に到達するまで待機します。起動タイムアウトの既定値は 30 秒です。アプリケーションが `application.New` より前に時間のかかる初期化を行う場合は、`Config.HelperReadyTimeout` に、例えば `time.Minute` のような長い時間を設定してください。ゼロは既定値を選択し、負の時間は拒否されます。起動がタイムアウトすると、`Restart` は `updater.ErrHelperNotReady` を返し、実行中のアプリケーションを終了させません。
 
+アップデートは、インストール済みのバイナリと同じ場所(macOS では `.app` バンドルと同じ場所)にある `wails-update-*` ディレクトリに配置されるため、このディレクトリには書き込み権限が必要です。
+
+AppImage 内では、アップデーターは読み取り専用のマウントではなく、`$APPIMAGE` が示す `.AppImage` ファイルを置き換えて再起動します。
+
 既定のウィンドウには現在の状態が自動的に反映されます。たとえば、`Check`が更新なしを返した場合は次のように表示され、ユーザーは<strong>閉じる</strong>でウィンドウを閉じます。
 
 ![「最新」状態の既定のアップデーターウィンドウ — 緑色のチェックマーク、「最新の状態です」という見出し、単一の「閉じる」ボタン。](/assets/updater/default-window-up-to-date.png)
@@ -648,6 +652,6 @@ app.Updater.SkipVersion("")
 
 ## 関連項目
 
-- 実行可能な例：[`v3/examples/updater`](https://github.com/wailsapp/wails/tree/master/v3/examples/updater)
+- 実行可能な例：[`v3/examples/updater`](https://github.com/wailsapp/wails/tree/releases/v3.0.0/v3/examples/updater)
 - テスト用デモリポジトリ：[`wailsapp/updater-demo`](https://github.com/wailsapp/updater-demo)
 - チュートリアル：[Wailsアプリに自己更新機能を追加する](/tutorials/04-self-update-a-wails-app/)
